@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  RBMK Simulator - Interactive operating checklist.
+  Self-contained: open this file directly in any browser, no server needed.
+  Tick state is stored in that browser's localStorage only.
+  Use the PDF button to print or save a copy.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<title>RBMK Operator's Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#e7ebe8;
+  --panel:#f6f8f6;
+  --panel-2:#eef2ef;
+  --ink:#141c1b;
+  --ink-2:#3d4b48;
+  --muted:#657571;
+  --line:#c6d0cc;
+  --line-soft:#d9e1dd;
+  --accent:#0e5a61;
+  --accent-soft:#dceaea;
+  --ok:#2c6e49;
+  --caution:#8d5c06;
+  --alarm:#a02e23;
+  --lamp:#c8880f;
+  --shadow:0 1px 2px rgba(20,40,38,.08),0 6px 18px rgba(20,40,38,.05);
+  --radius:3px;
+  --f-display:"Saira Condensed","Arial Narrow",sans-serif;
+  --f-body:"Source Sans 3",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0f1413;
+    --panel:#161d1c;
+    --panel-2:#1c2524;
+    --ink:#e3eae7;
+    --ink-2:#b9c6c2;
+    --muted:#879792;
+    --line:#2b3735;
+    --line-soft:#232e2d;
+    --accent:#57b7be;
+    --accent-soft:#152c2e;
+    --ok:#63bd88;
+    --caution:#d69b2e;
+    --alarm:#e2695b;
+    --lamp:#e0a92e;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0f1413;
+  --panel:#161d1c;
+  --panel-2:#1c2524;
+  --ink:#e3eae7;
+  --ink-2:#b9c6c2;
+  --muted:#879792;
+  --line:#2b3735;
+  --line-soft:#232e2d;
+  --accent:#57b7be;
+  --accent-soft:#152c2e;
+  --ok:#63bd88;
+  --caution:#d69b2e;
+  --alarm:#e2695b;
+  --lamp:#e0a92e;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.28);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:.01em}
+a{color:var(--accent)}
+code,.mono{font-family:var(--f-mono);font-size:.875em;font-variant-numeric:tabular-nums}
+
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+.topbar-in{
+  max-width:1240px;margin:0 auto;
+  padding-block:10px;padding-left:18px;padding-right:18px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand h1{
+  font-size:21px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  white-space:nowrap;
+}
+.brand .sub{
+  font-family:var(--f-mono);font-size:11px;color:var(--muted);
+  letter-spacing:.04em;white-space:nowrap;
+}
+.bar-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.searchwrap{position:relative;display:flex;align-items:center}
+.searchwrap svg{position:absolute;left:9px;width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2}
+input[type=search]{
+  font-family:var(--f-body);font-size:13px;color:var(--ink);
+  background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px 10px 6px 28px;width:190px;
+}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:1px}
+.btn{
+  font-family:var(--f-display);font-size:13px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-2);background:var(--panel-2);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:6px 11px;cursor:pointer;line-height:1.3;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.btn.danger:hover{border-color:var(--alarm);color:var(--alarm)}
+
+.progress-strip{height:3px;background:var(--line-soft)}
+.progress-strip>i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s ease}
+
+/* ---------- layout ---------- */
+.shell{
+  max-width:1240px;margin:0 auto;
+  padding-block:24px;padding-left:18px;padding-right:18px;
+  display:grid;grid-template-columns:232px minmax(0,1fr);gap:30px;align-items:start;
+}
+.rail{position:sticky;top:78px;display:flex;flex-direction:column;gap:3px}
+.rail-title{
+  font-family:var(--f-display);font-size:11px;text-transform:uppercase;
+  letter-spacing:.14em;color:var(--muted);margin:0 0 8px 2px;
+}
+.rail a{
+  display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;
+  padding:5px 7px;border-radius:var(--radius);text-decoration:none;
+  color:var(--ink-2);font-size:13.5px;line-height:1.3;
+  border:1px solid transparent;
+}
+.rail a:hover{background:var(--panel);border-color:var(--line-soft)}
+.rail a .k{
+  font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--muted);
+  text-align:center;
+}
+.rail a .pc{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rail a.done .k{color:var(--ok)}
+.rail a.done .pc{color:var(--ok)}
+.rail hr{border:0;border-top:1px solid var(--line-soft);margin:10px 2px}
+
+main{min-width:0;display:flex;flex-direction:column;gap:26px}
+
+/* ---------- intro ---------- */
+.lede{
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:var(--radius);padding:18px 20px;
+}
+.lede h2{font-size:15px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);margin-bottom:8px}
+.lede p{margin:0 0 9px;max-width:66ch;color:var(--ink-2)}
+.lede p:last-child{margin-bottom:0}
+
+/* ---------- phase ---------- */
+.phase{scroll-margin-top:82px}
+.phase-head{
+  display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;
+  padding-bottom:8px;border-bottom:2px solid var(--ink);margin-bottom:14px;
+}
+.phase-key{
+  font-family:var(--f-mono);font-size:12px;font-weight:600;
+  color:var(--panel);background:var(--ink);padding:2px 7px;border-radius:2px;
+  letter-spacing:.06em;
+}
+.phase-head h2{font-size:25px;font-weight:700;letter-spacing:.02em;flex:1;min-width:0}
+.phase-count{
+  font-family:var(--f-mono);font-size:11.5px;color:var(--muted);
+  font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.phase-goal{
+  font-size:14px;color:var(--muted);margin:-6px 0 14px;max-width:70ch;font-style:italic;
+}
+
+.steps{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none}
+
+/* ---------- step ---------- */
+.step{
+  display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;
+  padding:9px 12px 9px 8px;border-radius:var(--radius);
+  border:1px solid transparent;
+}
+.step:hover{background:var(--panel)}
+.step + .step{border-top:1px solid var(--line-soft)}
+.step input[type=checkbox]{
+  appearance:none;-webkit-appearance:none;
+  width:17px;height:17px;margin:3px 0 0 4px;
+  border:1.5px solid var(--muted);border-radius:2px;
+  background:var(--panel);cursor:pointer;position:relative;flex:none;
+}
+.step input[type=checkbox]:hover{border-color:var(--accent)}
+.step input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.step input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.step input[type=checkbox]:checked::after{
+  content:"";position:absolute;left:5px;top:1px;width:4px;height:9px;
+  border:solid var(--panel);border-width:0 2px 2px 0;transform:rotate(42deg);
+}
+.step label{cursor:pointer;display:block}
+.step .txt{font-size:15px;line-height:1.5}
+.step input:checked ~ .body .txt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.body{min-width:0}
+.why{
+  font-size:13.5px;color:var(--ink-2);margin-top:4px;max-width:72ch;
+}
+.why b{color:var(--ink);font-weight:600}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tag{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.03em;
+  padding:2px 6px;border-radius:2px;border:1px solid var(--line);
+  color:var(--muted);background:var(--panel-2);
+  max-width:100%;overflow-wrap:break-word;line-height:1.45;
+}
+.tag.where{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.tag.trip{border-color:var(--alarm);color:var(--alarm);background:transparent}
+.tag.watch{border-color:var(--caution);color:var(--caution);background:transparent}
+
+/* notes (non-checkable) */
+.note{
+  margin:6px 0;padding:11px 14px;border-radius:var(--radius);
+  background:var(--panel);border:1px solid var(--line-soft);border-left:3px solid var(--lamp);
+  font-size:13.5px;color:var(--ink-2);max-width:78ch;
+}
+.note.hazard{border-left-color:var(--alarm)}
+.note.key{border-left-color:var(--accent)}
+.note strong{color:var(--ink);font-weight:600}
+.note .nlabel{
+  font-family:var(--f-display);font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;
+  color:var(--lamp);display:block;margin-bottom:3px;
+}
+.note.hazard .nlabel{color:var(--alarm)}
+.note.key .nlabel{color:var(--accent)}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{
+  font-family:var(--f-display);font-size:11px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);background:var(--panel-2);position:sticky;top:0;
+  border-bottom:1px solid var(--line);
+}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sev{font-family:var(--f-mono);font-size:11px;font-weight:600}
+.sev.s-trip{color:var(--alarm)}
+.sev.s-warn{color:var(--caution)}
+.sev.s-info{color:var(--muted)}
+
+/* ---------- glossary ---------- */
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0 26px}
+.gitem{padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.gitem dt{
+  font-family:var(--f-mono);font-size:13px;font-weight:600;color:var(--accent);
+  margin-bottom:2px;
+}
+.gitem dd{margin:0;font-size:13.5px;color:var(--ink-2)}
+.gitem dd em{color:var(--muted);font-style:normal;font-size:12.5px}
+
+/* ---------- footer ---------- */
+footer{
+  border-top:1px solid var(--line);margin-top:10px;padding-top:16px;
+  font-size:12.5px;color:var(--muted);max-width:74ch;
+}
+footer code{color:var(--ink-2)}
+
+.compact .why,.compact .meta,.compact .note{display:none}
+.hidden{display:none !important}
+.empty{padding:30px 4px;color:var(--muted);font-style:italic}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:18px}
+  .rail{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
+  .rail-title{width:100%;margin-bottom:2px}
+  .rail hr{display:none}
+  .rail a{grid-template-columns:auto auto auto;padding:4px 8px;border:1px solid var(--line-soft);background:var(--panel)}
+  .rail a .lbl{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (max-width:480px){
+  .brand h1{font-size:17px}
+  .brand .sub{display:none}
+  input[type=search]{width:130px}
+  .phase-head h2{font-size:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+}
+@media print{
+  .topbar,.rail,.no-print{display:none !important}
+  .shell{display:block;max-width:none;padding:0}
+  body{background:#fff;color:#000;font-size:10.5pt}
+  .phase{break-inside:auto;page-break-inside:auto}
+  .step{break-inside:avoid;page-break-inside:avoid;border-bottom:1px solid #ddd}
+  .note,.gitem,tr{break-inside:avoid;page-break-inside:avoid}
+  .phase-head{break-after:avoid;page-break-after:avoid}
+  .step input[type=checkbox]{border-color:#666;background:#fff}
+  .tag{border-color:#999;color:#444}
+}
+</style>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <h1>Operator's Card</h1>
+      <span class="sub">RBMK-1000 · Unit simulator</span>
+    </div>
+    <div class="bar-tools">
+      <div class="searchwrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input type="search" id="q" placeholder="Filter steps…" aria-label="Filter checklist steps">
+      </div>
+      <button class="btn" id="compact" aria-pressed="false" title="Hide the explanatory notes under each step">Compact</button>
+      <button class="btn" id="theme" title="Switch light / dark">Theme</button>
+      <button class="btn no-print" id="print" title="Opens the browser print dialogue — choose Save as PDF">PDF</button>
+      <button class="btn danger" id="reset">Reset</button>
+    </div>
+  </div>
+  <div class="progress-strip"><i id="bar"></i></div>
+</div>
+
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Phases"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* =====================================================================
+   Content. Every number below was read out of the simulator source:
+   ThermalLayout.java (alarms, interlocks, setpoints), ReactorCore.java
+   (RPS, rods, reactivity), Turbine.java (TPS, oil, speed, sync),
+   TurbineStartStartDialog.java (hold points), docs/Reactivity.md.
+   s = checkable step, n = note.
+   where = which window the control lives in
+   watch / trip = values to keep an eye on / values that act on their own
+   ===================================================================== */
+
+const PHASES = [
+{
+  id:"orient", key:"A", name:"Orientation", goal:"Open the right windows and understand what the plant is already doing before you touch a single valve.",
+  items:[
+   {t:"Open the alarm list — Control Widgets ▸ Alarm List",
+    w:"Every interlock in this plant announces itself here first, and several of them act without asking you. Keep this window visible for the whole run.",
+    where:"Control Widgets ▸ Alarm List"},
+   {n:"key", nl:"How to read an alarm",
+    w:"Alarms climb a fixed ladder: <b>HIGH1 / LOW1</b> (drifting, pay attention) → <b>HIGH2 / LOW2</b> (act now) → <b>MAX1 / MIN1</b> (the level that usually <em>does</em> something — scram, turbine trip, a valve slamming shut) → <b>MAX2 / MIN2</b> (last ditch). A warning level never acts by itself. When you see MAX1 or MIN1, something has already happened."},
+   {t:"Open the mnemonic displays — Mnemonic Displays ▸ All Mnemonic Displays",
+    w:"Core/Loop, Feedwater, Condensate, Deaerator, Turbine, Preheaters, Blowdown and Aux Condenser. These are the flow schematics: pumps and valves are drawn live, so a wrongly lined-up path is visible instead of inferred.",
+    where:"Mnemonic Displays"},
+   {t:"Open Reactor Controls and Rod Positions",
+    w:"Rod Positions is the selsyn wall — 211 rod position indicators. Reactor Controls holds the rod selector, AZ-5, the RPS switch, global/local regulator and the flux setpoint.",
+    where:"Control Widgets ▸ Reactor Controls"},
+   {t:"Open Diagrams ▸ Startup Pressure Setpoint",
+    w:"This is the one diagram you will refer to constantly during the startup. It draws the drum pressure setpoint as a function of reactor thermal power, with a cursor for each loop's actual pressure. Your job for the next hour is to keep those two cursors on the line.",
+    where:"Diagrams ▸ Startup Pressure Setpoint"},
+   {n:"key", nl:"The cold plant you inherit",
+    w:"A new simulation does <b>not</b> start from a dead plant. Already running or lined up: the <b>coolant auxiliary pump</b>; <b>blowdown cooldown pump 2</b>; both <b>loop bypass valves 100 % open</b> (natural circulation around the idle MCPs); all eight <b>MCP trim valves 100 % open</b>; blowdown return valves 80 % and from-loop valves 95 %. Inventory: steam drums at <b>36.8 °C</b>, deaerators nearly <b>empty</b> (about 10 % — your first real job), hotwell at <b>20 %</b>, cold condensate storage at <b>7.1 m</b>, bubbler pool <b>30 cm / 19 °C</b>, ECCS accumulators at <b>35 bar</b>."},
+   {t:"Decide your pace — Pause Simulation is in the File menu",
+    w:"Nothing here is real time in the sense that it forgives you. Pausing while you think is legitimate and costs nothing."},
+   {n:"", nl:"Save files", w:"Save games are <b>not</b> compatible between simulator versions. A save made on an older build will not load after an update."}
+  ]
+},
+{
+  id:"water", key:"B", name:"Service water & inventory", goal:"Establish cooling water to the condensers and coolers, and confirm you have enough clean water in the plant to fill everything you are about to fill.",
+  items:[
+   {t:"Confirm the coolant auxiliary pump is running",
+    w:"It starts with the simulation. On a cold plant it alone supplies the aux condensers and the blowdown aftercooler — enough while there is no heat to reject.",
+    where:"Control Widgets ▸ Coolant"},
+   {t:"Start main coolant pumps 1–4 as heat load appears",
+    w:"Four main circulating pumps feed the main condenser. You do not need all four before the turbine takes steam, but you do need them before you dump serious steam into the condenser.",
+    where:"Coolant"},
+   {t:"Set the main-to-aux valve (Coolant#MainToAuxValve) as required",
+    w:"This cross-connect lets the four main pumps supply the aux condensers and the aftercooler instead of the single aux pump. Open it once the main pumps are running and the aux condensers start carrying real steam flow."},
+   {t:"Check cold condensate storage level",
+    w:"Your makeup reservoir. Two pumps feed the plant from it.",
+    watch:"LOW1 2.0 m · LOW2 0.5 m · HIGH1 8.0 m · HIGH2 9.0 m",
+    trip:"MIN1 0.1 m stops both makeup pumps and blocks the drain · MAX1 10.0 m blocks the fill valve"},
+   {t:"Bring the hotwell up to level from cold condensate storage",
+    w:"Hotwell#FillValve draws from the makeup tank. Keep the level between Hotwell#LowerSetpoint and Hotwell#UpperSetpoint. This one is unusually unforgiving — <b>both ends of the hotwell level scale scram the reactor and trip the turbine</b>, because a flooded condenser and a dry condensate pump are equally fatal to the model.",
+    where:"Control Widgets ▸ Condensation & Ejectors",
+    watch:"LOW1 15 cm · LOW2 10 cm · HIGH1 80 cm",
+    trip:"MIN1 5 cm and MAX1 100 cm → reactor scram + turbine trip"},
+   {t:"Confirm bubbler pool level and temperature",
+    w:"400 m² of pool under the reactor, initially 30 cm deep (120 t) at 19 °C. It is the destination for the drum relief valves, so it should be cool and at level before you make any pressure. Two sprinkler pumps with cooler valves keep it there.",
+    where:"Control Widgets ▸ Emergency Core Cooling System"}
+  ]
+},
+{
+  id:"cond", key:"C", name:"Condensate & deaerators", goal:"Build the water path hotwell → booster pumps → preheaters → deaerators, and get both deaerators to normal level.",
+  items:[
+   {t:"Start hotwell pumps and condensate pumps",
+    w:"Three of each, in three parallel strings. They are interlocked off while hotwell level is at MIN1, so fix level first.",
+    where:"Control Widgets ▸ Condensation"},
+   {t:"Start the booster pumps",
+    w:"They lift condensate through the ejector coolers and the three low-pressure preheaters toward the deaerators."},
+   {t:"Set the preheater condensate level controls to auto",
+    w:"Level setpoint is 50 cm on all three.",
+    where:"Control Widgets ▸ Preheaters",
+    watch:"LOW1 20 cm · LOW2 15 cm · HIGH1 100 cm · HIGH2 120 cm · MAX1 150 cm"},
+   {n:"", nl:"Why preheater level can read negative", w:"The preheater condensate displays use a <b>70 cm offset</b> — the gauge reads 0 cm when there is actually 70 cm of water in the shell. That is deliberate: it lets level go 'below zero' on the display without the model hitting an illegal empty state."},
+   {t:"Open the condensate valves to the deaerators and fill to 100 cm",
+    w:"Condensation1#ValveToDA and Condensation2#ValveToDA run a PI loop against Deaerator#LevelSetpoint. Normal level is <b>100 cm</b>. The deaerators start nearly empty by design — filling them is the first real task of the startup.",
+    where:"Control Widgets ▸ Deaerators",
+    watch:"LOW1 60 cm · LOW2 40 cm · HIGH1 160 cm · HIGH2 180 cm",
+    trip:"MIN1 20 cm shuts the DA drain · MIN2 10 cm trips that side's feed pumps · MAX1 210 cm shuts the steam supply · MAX2 220 cm shuts the condensate valve"},
+   {t:"Once steam exists, put the DA steam regulating valves on auto",
+    w:"Deaerator#SteamInRegValve holds Deaerator#PressureSetpoint (adjustable 1–10 bar). Deaerator#SteamFromMain is the supply from the main steam header. Heating the deaerators is what actually deaerates the water, so this is not optional housekeeping.",
+    where:"Deaerators",
+    watch:"DA temperature LOW2 110 °C · LOW1 130 °C · HIGH1 170 °C · HIGH2 175 °C",
+    trip:"DA temperature MAX1 180 °C forces the steam valve to manual and shuts it"},
+   {n:"", nl:"Reverse flow protection", w:"If steam tries to flow <b>backwards</b> out of a deaerator (more than 1 kg/s the wrong way), that valve is forced shut and auto mode is revoked. This happens most often after a scram, when the two deaerators end up at very different pressures."},
+   {t:"Cross-connect DA 1 and DA 2 only deliberately",
+    w:"The 'DA1 to 3' / 'DA2 to 3' valves share the spare feedwater pump between the two halves. The two paths are mutually interlocked — you cannot have both open at once, because that would tie the two feedwater headers together through the hotwell."}
+  ]
+},
+{
+  id:"feed", key:"D", name:"Feedwater & drum level", goal:"Put feedwater into both steam drums on the startup line and establish level control before there is any heat to worry about.",
+  items:[
+   {t:"Line up feed pumps 1.1 / 1.2 and 2.1 / 2.2 — suction valves first, then start",
+    w:"Two main feed pumps per loop, plus Feed Pump 3 as a shared spare.",
+    where:"Control Widgets ▸ Feedwater"},
+   {t:"Use the startup feed path, not the main lines",
+    w:"Each loop has three feed lines. Line 1 is the <b>startup line</b>: it runs through Feedwater#StartupReductionValve in series with shutoff valve 1 and flow regulation valve 1, and the two valves together throttle down to the tiny flows a cold core actually needs. Fully open it passes about <b>300 kg/s</b> — enough all the way to the last turbine hold point. Lines 2 and 3 are the full-power valves and are far too coarse now.",
+    where:"Feedwater"},
+   {t:"Set the drum level setpoint and put the flow regulation valve on auto",
+    w:"Loop#DrumLevelSetpoint is adjustable ±10 cm around the nominal separator level, and ramps at 0.5 cm/s.",
+    where:"Control Widgets ▸ Drum Level Control",
+    watch:"LOW1 −20 cm · LOW2 −40 cm · HIGH1 +30 cm · HIGH2 +60 cm"},
+   {n:"hazard", nl:"Both ends of drum level scram the reactor", w:"<b>MAX1 +100 cm</b> scrams the reactor and slams all three feedwater shutoff valves on that loop. <b>MIN1 −60 cm</b> scrams the reactor, forces the blowdown balance loop to manual and shuts the blowdown connections to that drum. <b>MIN2 −80 cm</b> additionally locks out all four MCPs on that loop — they will not run, no matter what you press, until level recovers."},
+   {t:"Watch feedwater collector pressure",
+    w:"Measured at the pump discharge collector on each loop.",
+    watch:"LOW1 70 bar · LOW2 60 bar",
+    trip:"MIN1 50 bar → reactor scram"},
+   {n:"", nl:"Backflow protection on the shutoff valves", w:"Every feedwater shutoff valve is held closed whenever collector pressure is <b>below</b> drum pressure and flow is heading backwards. This is invisible in normal operation and very visible after a scram, when drum pressure spikes above a decaying pump header — the valves simply refuse to open until the pumps win again."},
+   {t:"Keep Feed Pump 3 assigned to one side only",
+    w:"The spare pump's inlet valves to loop 1 and loop 2 are mutually interlocked. It also doubles as the ECCS 'FP' fill path into emergency feed line 3."}
+  ]
+},
+{
+  id:"mcp", key:"E", name:"Main circulation pumps", goal:"Replace natural circulation with forced flow through the fuel channels, without cavitating a pump.",
+  items:[
+   {n:"key", nl:"Why the bypass is open", w:"At cold start both <b>loop bypass valves are 100 % open</b>. They connect the loop collector straight to the distributor, in parallel with the idle MCPs, so the core cools by natural circulation while the pumps are stopped. As you bring MCPs up, this bypass has to come closed or the pumps will largely circulate water in a circle through it."},
+   {t:"Open the discharge valve on the first MCP, then start it",
+    w:"Four pumps per loop. Bring them up one at a time and let flow settle between each.",
+    where:"Control Widgets ▸ Main Circulation Pumps"},
+   {t:"Close the loop bypass valve progressively as MCP flow builds",
+    w:"Do it gradually — slamming the bypass shut while only one pump is running shifts the whole flow resistance onto that pump."},
+   {t:"Leave the trim valves fully open at first, then trim",
+    w:"Trim valves start at 100 %. Closing a trim valve reduces that pump's flow — and, in this model, is also the direct cure for cavitation on that pump."},
+   {n:"hazard", nl:"Cavitation, and the pump that bites", w:"Cavitation is modelled from how close the MCP intake temperature is to saturation at drum pressure. <b>MCP 1.1 is the sensitive one</b>: its alarm ladder is 2 / 10 / <b>40</b>, against 5 / 20 / <b>95</b> for every other pump. At MAX1 the pump <b>stops itself and shuts its own discharge valve</b>, and the alarm is held for several seconds so you cannot simply restart through it. Cold feedwater through the startup valves and the blowdown system in cooldown mode both push the intake further from saturation, which is what keeps you out of trouble at low pressure."},
+   {n:"", nl:"A gap in the model worth knowing", w:"The <b>loop flow alarms are commented out</b> in the current source. The reactor protection logic still tests them before allowing an RPS reset, so those particular tests always pass — low core flow will <em>not</em> scram the reactor on its own. Watch flow yourself; nothing else will."},
+   {t:"Target roughly matched flow in both loops",
+    w:"Reference voiding at full load is 21.3 %V on four pumps, 21.6 %V on three, 22.3 %V on two and 24.1 %V on one. Dropping a pump at power therefore <em>adds</em> reactivity through the positive void coefficient — worth about half an automatic rod."}
+  ]
+},
+{
+  id:"reactor", key:"F", name:"Reactor startup", goal:"Clear the protection system, withdraw rods in a disciplined order and take the core critical under automatic control.",
+  items:[
+   {t:"Reset the reactor protection system (RPS)",
+    w:"The RPS will refuse the reset unless the plant agrees. Required: <b>average rod position ≥ 7.1 m</b> (rods effectively fully inserted), <b>neutron flux ≤ 0.2 %N</b>, no feedwater pressure MIN1 on either loop, and no drum pressure MAX1 on either loop. A refused reset is logged, not announced — if nothing happens, one of those five is still true.",
+    where:"Reactor Controls ▸ RPS · Reset"},
+   {t:"Select all automatic rods and enable Global Control",
+    w:"Global control cannot be enabled while RPS is active, and it will not go to Auto unless at least one rod is actually in automatic mode. Enabling the system and activating it are two separate presses.",
+    where:"Reactor Controls ▸ Automatic Regulator"},
+   {t:"Withdraw four manual rods and set the automatic rods around one third out",
+    w:"This is the designed base condition: about <b>82.7 % rod absorption</b>, with the short rods roughly half inserted. Four manual rods are deliberately held in reserve as shutdown margin and are not yours to spend.",
+    where:"Reactor Controls ▸ Rod Selector · Rod Control"},
+   {n:"key", nl:"What each rod is worth", w:"28 manual rods carry <b>76.23 %</b> of total absorption — a fully withdrawn manual rod is worth <b>2.74 %</b>. Five automatic rods carry 14.12 % (2.82 % each). Four short rods carry 6.78 %, and they travel <em>upward</em> from the bottom, so their position reads inverted against the others. The missing 2.87 % is the rod tip (displacer) effect."},
+   {t:"Watch the ORM as you withdraw",
+    w:"Operating Reactivity Margin, displayed as an equivalent number of rods. It is computed from rod absorption <em>before</em> the displacer boost is applied, so it is an honest measure of how much shutdown capability you still hold."},
+   {t:"Set the target flux and the power gradient before you go critical",
+    w:"Reactor#TargetNeutronFlux accepts 1–110 %N. Reactor#SetpointPowerGradient defaults to <b>0.2 %/s</b> and will not exceed <b>0.35 %/s</b>. The gradient is what actually protects you here: it is the difference between a controlled approach and a scram on neutron rate.",
+    where:"Reactor Controls ▸ Global Control"},
+   {t:"Bring global control to Auto and let it hold the setpoint",
+    w:"The automatic rods run a PI loop on flux error, with the controller input clamped so neutron <em>rate</em> stays between about −3.8 and +4.5. That clamp is why the regulator will not itself drive you into a rate scram."},
+   {n:"hazard", nl:"Three ways the core scrams itself during startup",
+    w:"<b>Neutron rate MAX1 5.5</b> (warnings at 2.5 and 4.0) · <b>reactivity MAX1 0.0034</b> (warnings at 0.0018 and 0.0026) · <b>average automatic rod position reaching 7.2 m</b>, meaning the regulator has run out of travel and inserted itself fully. That last one is the sneaky one, and it is announced well in advance."},
+   {t:"Keep the automatic rods away from both ends of their travel",
+    w:"If the average active auto rod position drifts low (<b>LOW1 below 1.0 m, LOW2 below 0.4 m</b>) or high (<b>HIGH1 above 6.5 m, HIGH2 above 6.8 m</b>), the regulator is running out of authority. The fix is always the same: move <em>manual</em> rods in the opposite direction to re-centre the automatic group.",
+    watch:"Avg. auto rod position — keep it near mid-travel",
+    trip:"MAX1 7.2 m → automatic shutdown"},
+   {t:"Enable Local Control (short rods) once flux is established",
+    w:"The four short rods at 28-28, 34-28, 28-34 and 34-34 run a balance loop that keeps neutron flux roughly even across the four quadrants of the core."},
+   {t:"Enable Thermal Power Correction only above 10 %N",
+    w:"'Th. Corr' refuses to enable unless global control is <b>active</b> and flux is <b>above 10 %N</b>. Switching global control off switches thermal power correction off with it."}
+  ]
+},
+{
+  id:"press", key:"G", name:"Heat-up, pressure & vacuum", goal:"Raise drum pressure along the startup curve while building condenser vacuum, so the turbine has somewhere to exhaust.",
+  items:[
+   {n:"key", nl:"The startup pressure curve", w:"While startup setpoint mode is on, the drum pressure setpoint is a function of reactor thermal power: flat at <b>5.0 bar</b> up to <b>90 MWth</b>, then a straight line up to <b>64.0 bar</b> at <b>400 MWth</b>, flat above that. That is the line drawn in the Startup Pressure Setpoint diagram, and the two cursors are your actual drum pressures. Raising power raises the setpoint; the pressure controls then chase it."},
+   {t:"Leave startup pressure setpoint mode ON for the whole startup",
+    w:"There is a reminder alarm once thermal power passes about 500 MW, because by then you should have switched to a fixed setpoint.",
+    where:"Control Widgets ▸ Pressure Setpoint"},
+   {n:"", nl:"The main steam valves open themselves", w:"The main steam shutoff valves are automatic: they <b>open at 1.3 bar</b> drum pressure and <b>close below 1.1 bar</b>. You will see them act on their own as the drums first come up — that is not a fault."},
+   {t:"Start the startup ejectors to pull vacuum",
+    w:"Two steam-jet ejectors, each drawing about <b>1 kg/s</b> of steam. They need steam to work, which is why vacuum comes after the first pressure and not before it. They are deliberately weak: they cannot hold vacuum against a large steam flow into the condenser.",
+    where:"Condensation & Ejectors",
+    watch:"Startup ejector flow HIGH1 1.2 kg/s · HIGH2 1.5 kg/s"},
+   {n:"hazard", nl:"Vacuum gates half the plant", w:"Below <b>MIN1 (5·10⁴ Pa of vacuum)</b> the model holds shut: both main steam dumps, all three main ejector condensate valves, the first preheater's condensate valve and the low-pressure turbine tap — and it <b>trips the turbine</b>. Warnings come at 9·10⁴ (LOW1) and 7·10⁴ (LOW2). Vacuum builds quickly and decays slowly, so a lost vacuum is a long recovery."},
+   {t:"Control drum pressure with the aux condensers on auto",
+    w:"AuxCond#SteamValve runs a PI loop against the drum pressure setpoint and is limited to about <b>37.5 kg/s</b> each. Before the turbine takes steam, this is your main pressure control — the aux condensers are the startup heat sink.",
+    where:"Control Widgets ▸ Auxiliary Condensers",
+    watch:"Aux cond level LOW1 60 · HIGH1 120 cm · temperature HIGH1 55 °C · steam flow HIGH1 40 kg/s",
+    trip:"Level MAX1 300 cm or temperature MAX1 90 °C forces the steam valve shut · level MIN1 5 cm shuts the condensate valve"},
+   {n:"", nl:"Aux condenser drain path", w:"Condensate goes either <b>to the hotwell</b> or <b>to drain</b> — never both. The two valves are mutually interlocked so only one flow path can be open at a time."},
+   {t:"Use the main steam dumps to the condenser for the rest",
+    w:"Main1#SteamDump and Main2#SteamDump also run against the drum pressure setpoint, but they need condenser vacuum before they will open at all."},
+   {t:"Keep the two loops' drum pressures together",
+    w:"A large split between loop 1 and loop 2 causes reverse flow through the shared blowdown connections.",
+    watch:"Differential HIGH1 4 bar · HIGH2 6 bar",
+    trip:"MAX1 8 bar closes every blowdown valve to both drums"},
+   {n:"hazard", nl:"If pressure control fails", w:"<b>72 bar</b> scrams the reactor (MAX1; warnings at 68 and 70). At roughly <b>74 bar</b> the relief valves to the bubbler pool blow, reseating near 72.5 bar. At roughly <b>78 bar</b> the relief valves to <b>atmosphere</b> blow, reseating near 74 bar. Every one of those relief valves raises its own alarm while open — and the one to atmosphere is releasing steam outside the building."}
+  ]
+},
+{
+  id:"turb", key:"H", name:"Turbine warm-up & roll", goal:"Clear the turbine protection system, roll the machine on the startup steam valve, and warm the high-pressure casing through four hold points.",
+  items:[
+   {t:"Start both auxiliary lube oil pumps",
+    w:"Oil pressure is modelled from the two aux pumps plus the shaft-driven pump. A running machine sits near 2.7 bar.",
+    where:"Control Widgets ▸ Turbine",
+    watch:"HIGH1 2.8 bar",
+    trip:"MIN1 1.6 bar → turbine trip"},
+   {t:"Confirm the valve hydraulic system is at 100 %",
+    w:"The trip valves, main steam valves and reheater steam valves are all held shut unless Turbine#Hydraulic reads above 99 %. Without hydraulics the turbine cannot be opened at all."},
+   {t:"Disengage the turning gear",
+    w:"It is engaged on a cold, stopped machine and <b>the TPS will not clear while it is engaged</b>. It re-engages automatically once the rotor falls below 50 rpm."},
+   {t:"Reset the turbine protection system (TPS)",
+    w:"Refused unless: no hotwell MAX1, no condenser vacuum MIN1, no drum pressure MIN1 on either loop, no lube oil MIN1, turning gear disengaged, and — coming from automatic — <b>rotor speed below 500 rpm</b>. Like the RPS, a refusal is silent.",
+    where:"Turbine ▸ Protection · Reset"},
+   {n:"key", nl:"The designed hold points", w:"Warm-up runs on the <b>high-pressure cylinder only</b> — the reheater stays out of it until after synchronisation. Each hold point pairs a rotor speed with the steam conditions that should exist when you reach it:<br><br><span class='mono'>&nbsp;750 rpm · 15 bar · 140 MWth · 4.7 %N<br>1500 rpm · 27 bar · 206 MWth · 7.0 %N<br>2250 rpm · 38 bar · 263 MWth · 8.8 %N<br>3000 rpm · 50 bar · 326 MWth · 10.9 %N</span><br><br>The values do not have to be exact. The <em>sequence</em> does."},
+   {t:"Roll the turbine on the startup steam valve to 750 rpm",
+    w:"The speed setpoint accepts 750–3100 rpm. Gradient select sets how fast the setpoint itself ramps: <b>Slow 10 · Med 30 · Fast 60</b>. Use Hold to freeze the setpoint where it currently sits."},
+   {t:"Soak at each hold point and watch differential expansion",
+    w:"Differential expansion is the rotor growing at a different rate from its casing. It is the single best indicator that you are warming the machine too fast — and unlike most things here, it does not recover by backing off once it has tripped.",
+    watch:"HP HIGH1 1.1 mm · HIGH2 1.3 mm — LP HIGH1 2.6 mm · HIGH2 3.0 mm",
+    trip:"HP MAX1 1.5 mm or LP MAX1 3.4 mm → turbine trip"},
+   {t:"Raise reactor power to hold drum pressure as the turbine takes more steam",
+    w:"Each hold point needs both its speed and its steam conditions. Power and speed climb together — this is where the startup pressure diagram earns its place on screen."},
+   {n:"hazard", nl:"Overspeed", w:"<b>MAX1 3100 rpm trips the turbine.</b> Warnings at 3015 and 3030. There is very little room above synchronous speed, so never leave the setpoint ramping unattended near 3000."}
+  ]
+},
+{
+  id:"sync", key:"I", name:"Synchronisation", goal:"Match the machine to the grid and close the breaker at the right instant.",
+  items:[
+   {t:"Hold 3000 rpm with drum pressure near 50 bar",
+    w:"50 bar is the designed synchronisation condition."},
+   {t:"Watch the synchroscope and close only as the needle crosses top",
+    w:"The model checks two things before it will accept the close: rotor speed inside the permitted band, and the <b>sync angle within about ±0.1 rad of zero</b>. Miss the window and the close is simply refused — the log records 'Sync failed' and nothing else happens.",
+    where:"Control Widgets ▸ Generator"},
+   {n:"key", nl:"What changes the moment you synchronise", w:"Rotor speed is pinned to exactly <b>3000 rpm</b> and the speed setpoint is forced to 3000 — you no longer control speed, you control <em>load</em>. From here on, more steam means more megawatts, not more rpm."},
+   {t:"Confirm the generator is carrying load before you do anything else",
+    w:"Opening the breaker again returns you to speed control with a hot machine and no load, which is the condition overspeed protection exists for."}
+  ]
+},
+{
+  id:"ramp", key:"J", name:"Ramp to full power", goal:"Bring in the reheater, the preheaters and the main ejectors, switch to the main feed lines, and take the unit up to rated output.",
+  items:[
+   {t:"Raise the flux setpoint and let the pressure setpoint follow",
+    w:"The startup curve reaches its ceiling of <b>64 bar at 13 %N</b>. Above that the setpoint is flat."},
+   {t:"At 15 %N, start warming the low-pressure turbine on the reheater",
+    w:"Carefully. This is the first time the LP cylinder sees hot steam, and LP differential expansion has a wider limit than HP precisely because it takes longer to warm.",
+    where:"Control Widgets ▸ Turbine ▸ Steam Reheater",
+    watch:"Reheater temperature setpoint 263 °C · condensate level setpoint 60 cm · condensate temperature HIGH1 150 °C · HIGH2 160 °C",
+    trip:"Reheater condensate temperature MAX1 180 °C → turbine trip"},
+   {t:"Keep reheater condensate level in band",
+    w:"The condensate valves and the drain are all held shut at MIN1, and the drain additionally refuses to open when the pressure difference would drive flow backwards.",
+    watch:"LOW2 45 cm · LOW1 50 cm · HIGH1 120 cm · HIGH2 140 cm · MAX1 180 cm",
+    trip:"MIN1 30 cm closes the condensate valves and the drain"},
+   {t:"Bring the three main ejectors into service and shut the startup ejectors",
+    w:"Each main ejector uses about <b>8.5 kg/s</b> of steam against the startup ejectors' 1 kg/s, and they need a turbine tap to run from. Watch the condensate temperature leaving them — design is 32 °C.",
+    watch:"Main ejector condensate temperature HIGH1 44 °C · HIGH2 52 °C"},
+   {t:"Put the three preheaters into service as their taps come up",
+    w:"Design outlet temperatures are <b>65 °C, 110 °C and 155 °C</b>. Each has its own alarm band and each tap valve is interlocked against wrong-direction flow and against condenser vacuum.",
+    watch:"Prh 1: LOW1 40 / HIGH1 73 · Prh 2: LOW1 80 / HIGH1 118 · Prh 3: LOW1 125 / HIGH1 163 °C"},
+   {t:"Transfer feedwater from the startup line to the two main lines",
+    w:"Open shutoff valves 2 and 3, put their flow regulation valves on auto, then close the startup line down. Do it one line at a time — the startup valve and the main valves have very different characteristics and the level loop will notice."},
+   {t:"Bring the remaining MCPs up and retrim",
+    w:"More pumps means less voiding, which means less positive reactivity. Expect the automatic rods to move as each pump comes in."},
+   {t:"Switch off startup pressure setpoint mode",
+    w:"Then set the fixed drum pressure setpoint, with Loop#PressureSetpointOffset if you want the two loops staggered.",
+    where:"Control Widgets ▸ Pressure Setpoint"},
+   {t:"Enable Thermal Power Correction",
+    w:"It requires global control active and flux above 10 %N, both of which you now have."},
+   {t:"Put the deaerator and hotwell level controls on auto and settle the plant",
+    w:"At steady full load the reactor sits near 848 K core temperature, xenon settles at 100 %Xe, and voiding runs 21–22 %V depending on how many MCPs you left running."}
+  ]
+},
+{
+  id:"ops", key:"K", name:"Steady operation", goal:"What to keep your eyes on once the unit is on load. Tick these as a round; reset and repeat.",
+  items:[
+   {t:"Steam drum levels — both loops within ±20 cm of setpoint", watch:"HIGH1 +30 · LOW1 −20 cm", trip:"+100 / −60 cm → scram"},
+   {t:"Drum pressures together and on setpoint", watch:"LOW1 60 · HIGH1 68 bar · differential HIGH1 4 bar", trip:"72 bar → scram · 8 bar differential → blowdown isolates"},
+   {t:"Feedwater collector pressure above 70 bar on both loops", trip:"50 bar → scram"},
+   {t:"Deaerator levels near 100 cm, temperatures 130–170 °C", trip:"DA level MIN2 10 cm trips that side's feed pumps"},
+   {t:"Hotwell level mid-band", trip:"5 cm or 100 cm → scram + turbine trip"},
+   {t:"Condenser vacuum healthy", trip:"MIN1 5·10⁴ Pa → turbine trip and half the plant's valves shut"},
+   {t:"Preheater levels near 50 cm and outlet temperatures at design", watch:"65 / 110 / 155 °C"},
+   {t:"Turbine: oil pressure, both differential expansions, bearing temperatures", trip:"Oil MIN1 1.6 bar · HP 1.5 mm · LP 3.4 mm"},
+   {t:"Automatic rod group near mid-travel, ORM healthy", w:"Re-centre with manual rods before the regulator runs out of travel — not after.", trip:"Avg. auto rod 7.2 m → scram"},
+   {t:"Xenon and the graphite effect trending as expected", w:"At full load xenon settles at 100 %Xe. At 50 % load it still settles at 86 %Xe. The graphite effect quietly accumulates whenever you run between 20 % and 70 % power."},
+   {t:"MCP cavitation margins — especially MCP 1.1", trip:"MAX1 stops the pump and shuts its discharge valve"},
+   {t:"Blowdown: treatment flow in band, aftercooler temperature low", watch:"Treatment flow LOW1 65 · HIGH1 140 kg/s · treatment temperature HIGH1 40 °C", trip:"Aftercooler MAX1 95 °C closes both drum and loop inlet valves"},
+   {t:"Aux condenser levels and temperatures, bubbler pool level and temperature"},
+   {t:"Cold condensate storage above 2 m"}
+  ]
+},
+{
+  id:"down", key:"L", name:"Controlled shutdown", goal:"Take the unit off load and the core subcritical without walking into the xenon pit or the graphite effect.",
+  items:[
+   {n:"hazard", nl:"Plan the descent before you start it", w:"The two effects that will strand you are <b>xenon</b> and the <b>graphite effect</b>, and they punish the same mistake: sitting at part load and then reducing further. Xenon peaks <em>after</em> a power reduction — the iodine pit. The graphite effect accumulates while you run between 20 % and 70 % power, does not decay at all between 0.1 % and 20 %, and can rise to 110 % if you drop to low power after a long half-load hold. That combination will very nearly terminate the chain reaction, and it will be extremely difficult to raise power again. If you intend to shut down, go down <b>steadily</b>."},
+   {t:"Reduce the flux setpoint on the power gradient, not by hand",
+    w:"Keep the gradient modest. The automatic rods will insert as you go; watch that the group does not bottom out."},
+   {t:"Unload the generator, then open the breaker",
+    w:"Do not open the breaker on load. Once open you are back on speed control at 3000 rpm with a hot machine."},
+   {t:"Take the reheater out of service and let the LP cylinder cool",
+    w:"Reverse of the warm-up: LP first out, HP last."},
+   {t:"Close the turbine steam valves and trip the machine",
+    w:"Let the rotor coast down. Below 50 rpm the turning gear engages automatically. Keep both aux oil pumps running through the entire coast-down.",
+    trip:"Losing oil pressure on a coasting rotor is exactly when it matters most"},
+   {t:"Switch the startup pressure setpoint mode back on and walk pressure down the curve",
+    w:"The same line you came up. Aux condensers and steam dumps take the heat while pressure falls."},
+   {t:"Insert the manual rods in groups as power falls",
+    w:"Do not leave a large number of manual rods withdrawn at low flux. See the warning below."},
+   {n:"hazard", nl:"AZ-5 and the accident condition", w:"AZ-5 inserts everything. In this model it is <b>safe when flux is above 10 %N</b> and progressively dangerous below it: below 5 %N the displacer boost is applied at full strength. If <b>more than 16 of the 28 manual rods are withdrawn</b> when you press it, all of their graphite displacers enter the core together, absorption drops sharply, and the neutron flux model goes prompt. The reactor explodes <b>2.5 seconds later</b>. The effect is fully fatal at 25 rods withdrawn.<br><br>This is the accident, and it is reachable from a normal-looking shutdown. Insert manual rods progressively on the way down, and do not arrive at low flux with the core held up by rods you are about to drop all at once."},
+   {t:"Confirm subcritical: flux ≤ 0.2 %N and average rod position ≥ 7.1 m",
+    w:"These are exactly the conditions the RPS will demand before it lets you start up again."}
+  ]
+},
+{
+  id:"cool", key:"M", name:"Cooldown & cold shutdown", goal:"Remove decay heat and put the plant back to the state you found it in.",
+  items:[
+   {t:"Keep feedwater and drum level control available",
+    w:"Decay heat does not stop when the rods go in. Fuel channels keep boiling for a long time afterwards."},
+   {t:"Put the blowdown system into cooldown mode",
+    w:"The cooldown pumps through the aftercooler are the designated decay-heat path. One cooldown pump is running from the start of the simulation for exactly this reason.",
+    where:"Control Widgets ▸ Blowdown & Aftercooler",
+    trip:"Aftercooler MAX1 95 °C closes the inlet valves from both drums and both loops"},
+   {t:"Stop the MCPs one at a time and reopen the loop bypass valves",
+    w:"Back to natural circulation — the condition you started in."},
+   {t:"Let drum pressure fall to near atmospheric",
+    w:"The main steam shutoff valves will close themselves below 1.1 bar."},
+   {t:"Decide what to do with condenser vacuum",
+    w:"Leaving the ejectors running holds vacuum; stopping them lets it decay slowly. Either is fine provided the turbine is tripped and the turning gear is engaged."},
+   {t:"Leave the turning gear engaged and both oil pumps running",
+    w:"A hot rotor left stationary will bow."}
+  ]
+},
+{
+  id:"emerg", key:"N", name:"Emergency & abnormal", goal:"What acts on its own, why, and what it takes to get back.",
+  items:[
+   {n:"hazard", nl:"Everything that scrams the reactor", w:"Steam drum level <b>MAX1 +100 cm</b> or <b>MIN1 −60 cm</b> (either loop) · drum pressure <b>MAX1 72 bar</b> (either loop) · feedwater collector pressure <b>MIN1 50 bar</b> (either loop) · hotwell level <b>MAX1 100 cm</b> or <b>MIN1 5 cm</b> · neutron rate <b>MAX1 5.5</b> · reactivity <b>MAX1 0.0034</b> · average automatic rod position reaching <b>7.2 m</b>."},
+   {n:"hazard", nl:"Everything that trips the turbine", w:"Drum pressure <b>MIN1 8 bar</b> (either loop) · condenser vacuum <b>MIN1 5·10⁴ Pa</b> · hotwell level <b>MAX1</b> or <b>MIN1</b> · rotor speed <b>MAX1 3100 rpm</b> · lube oil pressure <b>MIN1 1.6 bar</b> · HP differential expansion <b>MAX1 1.5 mm</b> · LP differential expansion <b>MAX1 3.4 mm</b> · reheater condensate temperature <b>MAX1 180 °C</b>."},
+   {t:"After a scram: check what closed itself before you try to recover",
+    w:"Several scram paths take valves with them. Drum level MAX1 shuts all three feedwater shutoff valves on that loop. Drum level MIN1 forces the blowdown balance loop to manual and isolates that drum. A big pressure split between deaerators will have forced their steam valves shut and revoked auto mode."},
+   {t:"RPS reset conditions",
+    w:"No loop flow MIN1 · no feedwater pressure MIN1 (either loop) · no drum pressure MAX1 (either loop) · and, coming from automatic, <b>average rod position ≥ 7.1 m</b> and <b>flux ≤ 0.2 %N</b>. Switching the RPS to manual bypasses the reset entirely — and bypasses the protection with it."},
+   {t:"TPS reset conditions",
+    w:"No hotwell MAX1 · no condenser vacuum MIN1 · no drum pressure MIN1 (either loop) · no lube oil MIN1 · turning gear disengaged · and, coming from automatic, <b>rotor speed below 500 rpm</b>. The machine genuinely has to stop before you can reset a trip."},
+   {t:"Loss of feedwater: expect the scram at 50 bar collector pressure",
+    w:"Warnings at 70 and 60 bar give you the window. Starting the spare Feed Pump 3 on the affected loop is the fastest recovery, provided that loop's deaerator still has water."},
+   {t:"Loss of condenser vacuum: the turbine goes, then everything downstream closes",
+    w:"Steam dumps, ejector condensate valves, the first preheater's condensate valve and the LP turbine tap all shut at vacuum MIN1. Pressure control falls back to the aux condensers and, above them, the relief valves."},
+   {t:"Pressure relief valve operation",
+    w:"To the bubbler pool at roughly <b>74 bar</b>, reseating near 72.5 bar. To <b>atmosphere</b> at roughly <b>78 bar</b>, reseating near 74 bar. Each raises its own alarm while open. They will also force open if a steam drum falls below 20 cm of water, as a model-stability measure."},
+   {t:"ECCS actuation",
+    w:"The emergency feed valves are two-point controlled on drum level: they <b>open 16 cm below setpoint and close again at setpoint</b>. Three sources feed the same header — the pressure accumulators (PV), the pumps from the pressure suppression pool (PSP), and the pumps from cold condensate storage (CCS).",
+    where:"Control Widgets ▸ Emergency Core Cooling System"},
+   {t:"Xenon pit recovery",
+    w:"After a power reduction xenon peaks and then decays. The modelled contribution runs from about 55 % at full load to 83 % in the pit. Waiting it out works; forcing it with rods is how ORM gets spent."},
+   {t:"Graphite effect recovery",
+    w:"It only acts below 40 % flux. Above 40 % it decays quickly, so <b>raising</b> power clears it — but raising power against it is the hard part. From 1 % power after a long half-load hold it can reach 110 %, which will terminate the chain reaction until it decays."},
+   {t:"Ruptured fuel channels",
+    w:"Damaged channels leak into the pressure suppression pool. There is a Repair Ruptured Channels command in the menus for when you want to continue rather than restart."}
+  ]
+},
+{
+  id:"aux", key:"O", name:"Auxiliary systems", goal:"The supporting systems in enough detail to line them up correctly rather than by trial and error.",
+  items:[
+   {n:"key", nl:"ECCS — three sources, one header", w:"<b>PV — pressure vessels (accumulators).</b> Two of them, pre-charged, starting at 35 bar and filled toward roughly 90 bar by the PV fill pump. They are the instant source: no pump has to start, the gas pushes the water in. The valves are interlocked to stop them emptying or flowing backwards.<br><br><b>PSP — pressure suppression pool pumps.</b> Three pumps taking water from the bubbler pool under the reactor. This is the long-term source, and it is water that has already been in the building — it is cooled on its way through.<br><br><b>CCS — cold condensate storage pumps.</b> Three pumps from the clean makeup tank. Clean water, but a finite tank.<br><br><b>FP — feed pump path.</b> The spare Feed Pump 3 can be valved into emergency feed line 3, giving a fourth way into the core.<br><br>Each pump is sized to press against full reactor pressure. The PR valve relieves the accumulators to the pool; the drain valve and drain cooler let you empty the system down."},
+   {t:"Keep the ECCS accumulators charged and the pumps in standby",
+    w:"Accumulators start at 35 bar, which is barely above the empty pre-charge. Charging them is a startup task, not an emergency task."},
+   {n:"key", nl:"Blowdown and aftercooler", w:"A continuous purification and cooldown circuit. Water is taken <b>from the steam drums</b> and <b>from the loop</b> (downstream of the MCPs), passes a regenerative heat exchanger, an aftercooler, and the treatment plant, and returns to the drums. The balance control loop shares flow between the two intakes.<br><br>Treatment flow has a working band — <b>LOW1 65, HIGH1 140 kg/s</b> — and the alarms exist because drawing from the MCP pressure header while a pump is also running gives you far too much flow. Treatment temperature warns at 40 °C and 60 °C. The aftercooler itself shuts its own inlets at <b>MAX1 95 °C</b>.<br><br>In cooldown mode the two cooldown pumps push circulation through the aftercooler, which is the decay-heat path after a shutdown — and, incidentally, the thing that gives you about 6 K of extra cavitation margin on the MCPs during startup."},
+   {t:"Set the blowdown balance control and confirm the return valves are open",
+    w:"Return valves start at 80 % and the from-loop valves at 95 %. All of them are held shut at drum level MIN1 or MIN2, and all of them close together if the two drums' pressures split by 8 bar.",
+    where:"Control Widgets ▸ Blowdown & Aftercooler"},
+   {n:"key", nl:"Aux condensers", w:"Two small condensers used as the startup and shutdown heat sink, each taking up to about 37.5 kg/s of steam under automatic pressure control. Cooled from the coolant system — aux pump alone at first, main pumps through the cross-connect later. Condensate goes either to the hotwell or to drain, never both."},
+   {n:"key", nl:"Bubbler pool", w:"The pressure suppression pool below the reactor: 400 m² of floor area, starting at 30 cm depth and 19 °C. It receives the drum relief valves and any channel leakage, and supplies the ECCS pressure suppression pool pumps. Two sprinkler pumps with cooler valves circulate and cool it."},
+   {n:"key", nl:"Cold condensate storage (makeup)", w:"The plant's clean water reserve, starting at 7.1 m. It fills the hotwell, supplies the ECCS CCS pumps, and is the only place new water enters the cycle. The fill valve is blocked at MAX1 10 m and the drain and both pumps are blocked at MIN1 0.1 m."}
+  ]
+}
+];
+
+const REFERENCE = [
+ ["Steam drum level","−60 cm","+100 cm","−20 / −40 · +30 / +60 cm","MIN1 and MAX1 both scram; MIN2 −80 cm locks out that loop's MCPs","trip"],
+ ["Steam drum pressure","8 bar","72 bar","60 / 50 · 68 / 70 bar","MIN1 trips the turbine; MAX1 scrams the reactor","trip"],
+ ["Drum pressure differential","—","8 bar","4 / 6 bar","MAX1 closes every blowdown valve to the drums","warn"],
+ ["Feedwater collector pressure","50 bar","—","70 / 60 bar","MIN1 scrams the reactor","trip"],
+ ["Deaerator level","10 cm (MIN2)","220 cm (MAX2)","60 / 40 · 160 / 180 cm","MIN1 20 shuts drain · MIN2 trips feed pumps · MAX1 210 shuts steam · MAX2 shuts condensate","trip"],
+ ["Deaerator temperature","—","180 °C","130 / 110 · 170 / 175 °C","MAX1 forces the steam valve to manual and shut","warn"],
+ ["Hotwell level","5 cm","100 cm","15 / 10 · 80 cm","Both ends scram the reactor and trip the turbine","trip"],
+ ["Condenser vacuum","5·10⁴ Pa","—","9·10⁴ / 7·10⁴ Pa","MIN1 trips the turbine and shuts dumps, ejector and preheater valves","trip"],
+ ["Cold condensate storage","0.1 m","10.0 m","2.0 / 0.5 · 8.0 / 9.0 m","MIN1 stops makeup pumps · MAX1 blocks the fill valve","warn"],
+ ["Preheater levels (1–3)","10 cm","150 cm","20 / 15 · 100 / 120 cm","Setpoint 50 cm; display zero = 70 cm actual","warn"],
+ ["Preheater outlet temps","—","—","Design 65 / 110 / 155 °C","LOW1 40 / 80 / 125 · HIGH1 73 / 118 / 163 °C","info"],
+ ["Main ejector condensate","—","—","44 / 52 °C","Design 32 °C","info"],
+ ["Startup ejector flow","—","—","1.2 / 1.5 kg/s","Each ejector draws about 1 kg/s","info"],
+ ["Aux condenser level","5 cm","300 cm","60 / 40 · 120 / 200 cm","MIN1 shuts the condensate valve · MAX1 shuts the steam valve","warn"],
+ ["Aux condenser temperature","—","90 °C","55 / 65 °C","MAX1 shuts the steam valve","warn"],
+ ["Aux condenser steam flow","—","—","40 kg/s","Control limits each to about 37.5 kg/s on auto","info"],
+ ["Aftercooler temperature","—","95 °C","75 / 82.5 °C","MAX1 closes the inlet valves from both drums and loops","warn"],
+ ["Blowdown treatment flow","—","—","65 / 50 · 140 / 155 kg/s","Operator lineup check — no automatic action","info"],
+ ["Blowdown treatment temp","—","—","40 / 60 °C","No automatic action","info"],
+ ["Reheater condensate temp","—","180 °C","150 / 160 °C","MAX1 trips the turbine · setpoint 263 °C","trip"],
+ ["Reheater condensate level","30 cm","180 cm","50 / 45 · 120 / 140 cm","Setpoint 60 cm · MIN1 shuts condensate valves and drain","warn"],
+ ["Turbine speed","50 rpm (LOW1)","3100 rpm","3015 / 3030 rpm","MAX1 trips the turbine · setpoint range 750–3100 rpm","trip"],
+ ["Turbine lube oil pressure","1.6 bar","—","2.8 bar (HIGH1)","MIN1 trips the turbine · about 2.7 bar at speed","trip"],
+ ["HP differential expansion","—","1.5 mm","1.1 / 1.3 mm","MAX1 trips the turbine","trip"],
+ ["LP differential expansion","—","3.4 mm","2.6 / 3.0 mm","MAX1 trips the turbine","trip"],
+ ["Neutron rate","−2.5 (LOW1)","5.5","2.5 / 4.0","MAX1 scrams the reactor","trip"],
+ ["Core reactivity","—","0.0034","0.0018 / 0.0026","MAX1 scrams the reactor","trip"],
+ ["Avg. automatic rod position","0.4 m (LOW2)","7.2 m","1.0 m · 6.5 / 6.8 m","MAX1 scrams — the regulator has run out of travel","trip"],
+ ["MCP 1.1 cavitation","—","40","2 / 10","MAX1 stops the pump and shuts its discharge valve","trip"],
+ ["MCP (all others) cavitation","—","95","5 / 20","MAX1 stops the pump and shuts its discharge valve","trip"],
+ ["Drum relief → bubbler pool","—","≈74 bar","—","Reseats near 72.5 bar · raises its own alarm while open","trip"],
+ ["Drum relief → atmosphere","—","≈78 bar","—","Reseats near 74 bar · steam released outside the building","trip"]
+];
+
+const GLOSSARY = [
+ ["AZ-5","The full scram button — <em>Аварийная Защита 5</em>, emergency protection level 5. Inserts every rod. Safe above 10 %N; below 5 %N with more than 16 manual rods withdrawn it triggers the displacer boost and the accident."],
+ ["RPS","Reactor Protection System. The automatic shutdown logic. 'RPS active' means it has latched and is holding the reactor down until you satisfy its reset conditions."],
+ ["TPS","Turbine Protection System. The equivalent for the turbine — latches on a trip, holds the steam valves shut, and has its own reset conditions."],
+ ["Scram / auto shutdown","An automatic rod insertion ordered by the protection system rather than by you."],
+ ["ORM","Operating Reactivity Margin — how much shutdown capability you still hold, expressed as an equivalent number of fully withdrawn control rods. Computed before the displacer boost, so it does not flatter you."],
+ ["MCP","Main Circulation Pump. Four per loop, eight in total, forcing coolant through the fuel channels. Their alternative to running is the loop bypass and natural circulation."],
+ ["Trim valve","A throttle on each MCP discharge. Closing it reduces that pump's flow — and is the direct cure for cavitation on that pump."],
+ ["Loop bypass","A valve in parallel with the four MCPs of a loop. Open on a cold plant so the core circulates naturally; closed as the pumps take over."],
+ ["Steam drum / separator","Where the steam-water mixture leaving the fuel channels separates. Two per unit — one per loop. Its water level is the single most protected value in the plant."],
+ ["DA — deaerator","A heated tank that boils dissolved oxygen and gases out of the feedwater before it reaches the feed pumps. Two of them. Normal level 100 cm, held hot by main steam."],
+ ["Hotwell","The water space under the main condenser, where condensed steam collects before the condensate pumps take it away."],
+ ["Preheater","A feedwater heater — condensing steam bled from a turbine tap to warm the condensate. Three of them, to 65, 110 and 155 °C."],
+ ["Reheater / superheater","Dries and reheats steam between the high- and low-pressure turbine cylinders. Not used during warm-up; brought in at 15 %N."],
+ ["Ejector","A steam jet pump that pulls air out of the condenser to create vacuum. <em>Startup</em> ejectors are small (about 1 kg/s each); <em>main</em> ejectors are the running set (about 8.5 kg/s each)."],
+ ["Condenser vacuum","How far below atmospheric the condenser sits, here as a number from 0 to 10⁵ Pa where higher is better vacuum. Gates the steam dumps, the ejector condensate valves, a preheater and the turbine itself."],
+ ["Steam dump","A valve dumping main steam straight to the condenser, bypassing the turbine. Pressure control when the turbine cannot take the steam."],
+ ["PRV","Pressure Relief Valve. Two per drum: one to the bubbler pool (≈74 bar), one to atmosphere (≈78 bar). Both alarm while open."],
+ ["Bubbler pool / PSP","Pressure Suppression Pool. The large water pool beneath the reactor that receives relief steam and channel leakage, and supplies the ECCS suppression-pool pumps."],
+ ["ECCS","Emergency Core Cooling System. Gets water into the core when normal feedwater cannot. Three independent sources feeding one header."],
+ ["PV (ECCS)","Pressure Vessels — gas-charged accumulators, the instant source. No pump has to start; stored pressure does the work."],
+ ["PSP (ECCS)","Pumps taking suction from the pressure suppression pool. The long-term source — water already inside the building."],
+ ["CCS (ECCS)","Pumps taking suction from Cold Condensate Storage. Clean water from a finite tank."],
+ ["FP (ECCS)","The spare feedwater pump path into emergency feed line 3 — a fourth way into the core using equipment you already have."],
+ ["Blowdown","A continuous purification circuit taking water from the drums and the loop, cooling and treating it, and returning it. Also the designated decay-heat removal path when run in cooldown mode."],
+ ["Aftercooler","The heat exchanger in the blowdown circuit that takes the temperature out of the purge flow. Shuts its own inlets at 95 °C."],
+ ["Regenerator","The heat exchanger in the blowdown circuit that recovers heat from the returning water into the outgoing water."],
+ ["Makeup / cold condensate storage","The clean water reserve. The only place new water enters the cycle."],
+ ["Coolant system","Circulating (service) water: four main pumps and one auxiliary pump feeding the main condenser, the aux condensers and the aftercooler. Not reactor coolant."],
+ ["Turning gear","A slow drive that keeps a stopped hot rotor turning so it does not bow. Engages automatically below 50 rpm and must be disengaged before the TPS will clear."],
+ ["Synchroscope","The instrument showing phase angle between generator and grid. Close the breaker as it crosses the top — the model demands within about ±0.1 rad."],
+ ["Sync angle","The phase difference between generator and grid, in radians. Zero means in phase."],
+ ["Selsyn","An electromechanical position repeater — the analogue dials on the rod position wall, each showing one control rod's depth."],
+ ["Mnemonic display","A live flow schematic of one system, with pumps and valves drawn in their actual state. The fastest way to spot a wrong lineup."],
+ ["Global control","The automatic regulator driving the five automatic rods to hold a flux setpoint."],
+ ["Local control","The balance regulator driving the four short rods to keep flux even across the core's four quadrants."],
+ ["Th. Corr — Thermal Power Correction","A correction that trims the flux setpoint against measured thermal power. Requires global control active and flux above 10 %N."],
+ ["Transient (global control)","A mode allowing the global regulator to follow a moving setpoint rather than hold a fixed one."],
+ ["%N","Percent neutron flux — the reactor's power scale in this simulator. 100 %N is rated power."],
+ ["%V — voiding","Percent steam void in the fuel channels, 0 % meaning solid water and 100 % meaning empty. About 21–24 %V at full load depending on how many MCPs run."],
+ ["Void coefficient","Here <b>positive</b>: more steam voids means more reactivity. Losing an MCP at full power is worth about half an automatic rod of added reactivity."],
+ ["%Xe — xenon","Xenon-135 poisoning as a percentage of full-load equilibrium. Absorbs neutrons; builds after a power drop and decays over hours."],
+ ["Iodine pit","The reactivity trough some hours after a power reduction, when iodine-135 has decayed into xenon-135 faster than the xenon burns off."],
+ ["Graphite effect","A simulator-specific effect standing in for graphite stack temperature and gas composition. Accumulates between 20 % and 70 % power, acts only below 40 % flux, does not decay between 0.1 % and 20 %, and can reach 110 % — enough to terminate the chain reaction."],
+ ["Displacer","The graphite section below each control rod's absorber. Inserting a fully withdrawn rod pushes water out with graphite first, <em>adding</em> reactivity before the absorber arrives — the rod tip effect."],
+ ["Displacer boost","The modelled mechanism of the accident: many withdrawn manual rods entering together, their displacers stacking into a prompt excursion."],
+ ["Prompt excursion","Power rising on prompt neutrons alone, far too fast for any control system. In this model, 2.5 seconds from excursion to explosion."],
+ ["SWI","The rod position integrator behind each control rod — what actually moves the rod when you hold a direction key."],
+ ["Min. CPR","Minimum Critical Power Ratio — how close the worst fuel channel is to boiling crisis. Lower is worse."],
+ ["Rc. Flow","Recirculation flow — total coolant flow through a loop."],
+ ["Setpoint gradient","The rate at which a setpoint is allowed to ramp toward its target. Rod power gradient defaults to 0.2 %/s, maximum 0.35 %/s; turbine speed gradient is Slow 10 / Med 30 / Fast 60."],
+ ["Safe closed / safe off","Model interlocks that force a valve shut or a pump off regardless of what you command. They exist both to protect plant and to keep the simulation numerically stable."],
+ ["MAX1 / MIN1","The alarm level that usually carries an automatic action. MAX2 / MIN2 sit beyond it; HIGH / LOW levels below it are warnings only."]
+];
+</script>
+
+<script>
+(function(){
+"use strict";
+
+const KEY = "rbmk-operators-card-v1";
+let state = {};
+try{ state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; }catch(e){ state = {}; }
+
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ /* private window, blocked storage — the card still works */ }
+}
+
+const main = document.getElementById("main");
+const rail = document.getElementById("rail");
+
+/* ---------- intro ---------- */
+const lede = document.createElement("section");
+lede.className = "lede";
+lede.innerHTML =
+ '<h2>How to use this card</h2>' +
+ '<p>Fifteen phases, from a cold plant to cold shutdown, in the order the simulator actually wants them. Tick as you go — your progress is kept in this browser, so the card survives a reload but stays private to you.</p>' +
+ '<p>Every number here was read out of the simulator’s own source rather than from a real RBMK: alarm thresholds and interlocks from the thermal layout, protection logic from the reactor core and turbine models, and the turbine hold points from the built-in <em>How to start</em> dialogue. Where a value is a model quirk rather than plant physics, it says so.</p>' +
+ '<p><span class="tag where">grey-teal tags</span> tell you which window a control lives in, <span class="tag watch">amber tags</span> are values to keep an eye on, and <span class="tag trip">red tags</span> are the values that act without asking you.</p>';
+main.appendChild(lede);
+
+/* ---------- phases ---------- */
+let stepSeq = 0;
+const allSteps = [];
+
+PHASES.forEach(ph => {
+  const sec = document.createElement("section");
+  sec.className = "phase";
+  sec.id = ph.id;
+
+  const head = document.createElement("div");
+  head.className = "phase-head";
+  head.innerHTML = '<span class="phase-key">' + ph.key + '</span>' +
+                   '<h2>' + ph.name + '</h2>' +
+                   '<span class="phase-count" id="cnt-' + ph.id + '"></span>';
+  sec.appendChild(head);
+
+  const goal = document.createElement("p");
+  goal.className = "phase-goal";
+  goal.textContent = ph.goal;
+  sec.appendChild(goal);
+
+  const list = document.createElement("ul");
+  list.className = "steps";
+
+  ph.items.forEach(it => {
+    if(it.n !== undefined){
+      const note = document.createElement("li");
+      note.className = "note " + (it.n || "");
+      note.innerHTML = (it.nl ? '<span class="nlabel">' + it.nl + '</span>' : '') + it.w;
+      note.dataset.search = (it.nl || "") + " " + it.w;
+      list.appendChild(note);
+      return;
+    }
+    const id = ph.id + "-" + (stepSeq++);
+    const li = document.createElement("li");
+    li.className = "step";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = id;
+    cb.checked = !!state[id];
+    cb.addEventListener("change", () => {
+      state[id] = cb.checked;
+      save();
+      refresh();
+    });
+
+    const body = document.createElement("div");
+    body.className = "body";
+
+    const lab = document.createElement("label");
+    lab.setAttribute("for", id);
+    lab.innerHTML = '<span class="txt">' + it.t + '</span>';
+    body.appendChild(lab);
+
+    if(it.w){
+      const why = document.createElement("div");
+      why.className = "why";
+      why.innerHTML = it.w;
+      body.appendChild(why);
+    }
+
+    if(it.where || it.watch || it.trip){
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      if(it.where) meta.innerHTML += '<span class="tag where">' + it.where + '</span>';
+      if(it.watch) meta.innerHTML += '<span class="tag watch">WATCH · ' + it.watch + '</span>';
+      if(it.trip)  meta.innerHTML += '<span class="tag trip">ACTS · ' + it.trip + '</span>';
+      body.appendChild(meta);
+    }
+
+    li.appendChild(cb);
+    li.appendChild(body);
+    li.dataset.search = it.t + " " + (it.w||"") + " " + (it.where||"") + " " + (it.watch||"") + " " + (it.trip||"");
+    list.appendChild(li);
+    allSteps.push({id:id, el:li, cb:cb, phase:ph.id});
+  });
+
+  sec.appendChild(list);
+  main.appendChild(sec);
+
+  const a = document.createElement("a");
+  a.href = "#" + ph.id;
+  a.id = "rail-" + ph.id;
+  a.innerHTML = '<span class="k">' + ph.key + '</span><span class="lbl">' + ph.name + '</span><span class="pc"></span>';
+  rail.appendChild(a);
+});
+
+/* ---------- reference table ---------- */
+const refSec = document.createElement("section");
+refSec.className = "phase";
+refSec.id = "ref";
+refSec.innerHTML =
+ '<div class="phase-head"><span class="phase-key">REF</span><h2>Setpoints &amp; trips</h2></div>' +
+ '<p class="phase-goal">Every alarm threshold that carries an automatic action, plus the warning levels that precede it. MIN1 and MAX1 are the levels that act.</p>';
+const tw = document.createElement("div");
+tw.className = "tablewrap";
+let thtml = '<table><thead><tr><th>Parameter</th><th class="num">MIN1</th><th class="num">MAX1</th><th class="num">Warnings (LOW / HIGH)</th><th>What happens</th></tr></thead><tbody>';
+REFERENCE.forEach(r => {
+  thtml += '<tr data-search="' + (r[0]+" "+r[4]).replace(/"/g,"") + '">' +
+           '<td>' + r[0] + '</td>' +
+           '<td class="num">' + r[1] + '</td>' +
+           '<td class="num">' + r[2] + '</td>' +
+           '<td class="num">' + r[3] + '</td>' +
+           '<td><span class="sev s-' + r[5] + '">' + r[4] + '</span></td></tr>';
+});
+thtml += '</tbody></table>';
+tw.innerHTML = thtml;
+refSec.appendChild(tw);
+main.appendChild(refSec);
+
+const refLink = document.createElement("a");
+refLink.href = "#ref";
+refLink.innerHTML = '<span class="k">·</span><span class="lbl">Setpoints &amp; trips</span><span class="pc"></span>';
+rail.appendChild(document.createElement("hr"));
+rail.appendChild(refLink);
+
+/* ---------- glossary ---------- */
+const gSec = document.createElement("section");
+gSec.className = "phase";
+gSec.id = "glossary";
+gSec.innerHTML =
+ '<div class="phase-head"><span class="phase-key">GLS</span><h2>What the labels mean</h2></div>' +
+ '<p class="phase-goal">The abbreviations on the panels, in plain language.</p>';
+const dl = document.createElement("dl");
+dl.className = "gloss";
+GLOSSARY.forEach(g => {
+  const d = document.createElement("div");
+  d.className = "gitem";
+  d.innerHTML = '<dt>' + g[0] + '</dt><dd>' + g[1] + '</dd>';
+  d.dataset.search = g[0] + " " + g[1];
+  dl.appendChild(d);
+});
+gSec.appendChild(dl);
+main.appendChild(gSec);
+
+const gLink = document.createElement("a");
+gLink.href = "#glossary";
+gLink.innerHTML = '<span class="k">·</span><span class="lbl">What the labels mean</span><span class="pc"></span>';
+rail.appendChild(gLink);
+
+/* ---------- footer ---------- */
+const foot = document.createElement("footer");
+foot.innerHTML =
+ 'Derived from the RBMK Simulator source: <code>ThermalLayout.java</code> (alarms, interlocks, control loops), ' +
+ '<code>ReactorCore.java</code> (protection, rods, reactivity), <code>Turbine.java</code> (protection, oil, speed, synchronisation), ' +
+ '<code>TurbineStartStartDialog.java</code> (hold points) and <code>docs/Reactivity.md</code>. ' +
+ 'Thresholds change when the model changes — re-read the source after an update. ' +
+ 'This is a guide to a simulator, not to any real reactor.';
+main.appendChild(foot);
+
+/* ---------- progress ---------- */
+const bar = document.getElementById("bar");
+function refresh(){
+  let done = 0;
+  const per = {};
+  allSteps.forEach(s => {
+    if(!per[s.phase]) per[s.phase] = {d:0,t:0};
+    per[s.phase].t++;
+    if(s.cb.checked){ done++; per[s.phase].d++; }
+  });
+  const pct = allSteps.length ? Math.round(done/allSteps.length*100) : 0;
+  bar.style.width = pct + "%";
+  PHASES.forEach(ph => {
+    const p = per[ph.id] || {d:0,t:0};
+    const cnt = document.getElementById("cnt-" + ph.id);
+    if(cnt) cnt.textContent = p.d + " / " + p.t;
+    const link = document.getElementById("rail-" + ph.id);
+    if(link){
+      link.querySelector(".pc").textContent = p.t ? (p.d + "/" + p.t) : "";
+      link.classList.toggle("done", p.t > 0 && p.d === p.t);
+    }
+  });
+}
+refresh();
+
+/* ---------- filter ---------- */
+const q = document.getElementById("q");
+q.addEventListener("input", () => {
+  const term = q.value.trim().toLowerCase();
+  document.querySelectorAll("[data-search]").forEach(el => {
+    el.classList.toggle("hidden", term !== "" && el.dataset.search.toLowerCase().indexOf(term) === -1);
+  });
+  document.querySelectorAll(".phase").forEach(sec => {
+    const any = sec.querySelector("[data-search]:not(.hidden)");
+    sec.classList.toggle("hidden", term !== "" && !any);
+  });
+});
+
+/* ---------- controls ---------- */
+const compact = document.getElementById("compact");
+compact.addEventListener("click", () => {
+  const on = compact.getAttribute("aria-pressed") === "true";
+  compact.setAttribute("aria-pressed", String(!on));
+  document.body.classList.toggle("compact", !on);
+});
+
+document.getElementById("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const dark = cur ? cur === "dark"
+                   : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+});
+
+document.getElementById("print").addEventListener("click", () => window.print());
+
+document.getElementById("reset").addEventListener("click", () => {
+  if(!confirm("Clear every tick on this card?")) return;
+  state = {};
+  save();
+  allSteps.forEach(s => { s.cb.checked = false; });
+  refresh();
+});
+
+})();
+</script>
+</body>
+</html>
